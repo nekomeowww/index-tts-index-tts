@@ -52,14 +52,12 @@ dependencies = [
   "tensorboard==2.9.1",
   "textstat>=0.7.10",
   "tokenizers==0.21.0",
-  "torch==2.8.*",
-  "torchaudio==2.8.*",
   "tqdm>=4.67.1",
   "transformers==4.52.1",
 
   # Use "wetext" on Windows/Mac, otherwise "WeTextProcessing" on Linux.
   "wetext>=0.0.9; sys_platform != 'linux'",
-  "WeTextProcessing; sys_platform == 'linux'",
+  "WeTextProcessing; sys_platform == 'linux'", "gradio==5.45.0", "deepspeed==0.17.1",
 ]
 
 [project.optional-dependencies]
@@ -94,19 +92,24 @@ build-backend = "hatchling.build"
 # saves time, since it won't waste time downloading a generic PyTorch version.
 no-build-isolation-package = ["deepspeed"]
 
-[tool.uv.sources]
-# Install PyTorch with CUDA support on Linux/Windows (CUDA doesn't exist for Mac).
-# NOTE: We must explicitly request them as `dependencies` above. These improved
-# versions will not be selected if they're only third-party dependencies.
-torch = [
-  { index = "pytorch-cuda", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
-]
-torchaudio = [
-  { index = "pytorch-cuda", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
-]
-torchvision = [
-  { index = "pytorch-cuda", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
-]
+[tool.pixi.target.osx-arm64.pypi-dependencies]
+torch = ">=2.8.0, <3"
+torchaudio = ">=2.8.0, <3"
+
+[tool.pixi.target.linux-64.pypi-dependencies]
+torch = { version = ">=2.8.0, <3", index = "https://download.pytorch.org/whl/cu129" }
+torchaudio = { version = ">=2.8.0, <3", index = "https://download.pytorch.org/whl/cu129" }
+
+[tool.pixi.target.linux-64.dependencies]
+cuda = ">=13.0.2,<14"
+cuda-cupti = ">=13.0.85,<14"
+cuda-libraries-dev = ">=13.0.2,<14"
+cuda-nvcc = ">=13.0.88,<14"
+cuda-nvtx = ">=13.0.85,<14"
+
+[tool.pixi.target.win-64.pypi-dependencies]
+torch = { version = ">=2.8.0, <3", index = "https://download.pytorch.org/whl/cu129" }
+torchaudio = { version = ">=2.8.0, <3", index = "https://download.pytorch.org/whl/cu129" }
 
 [[tool.uv.index]]
 name = "pytorch-cuda"
@@ -115,3 +118,21 @@ name = "pytorch-cuda"
 url = "https://download.pytorch.org/whl/cu128"
 # Only use this index when explicitly requested by `tool.uv.sources`.
 explicit = true
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "win-64", "linux-aarch64", "osx-arm64"]
+
+[tool.pixi.pypi-dependencies]
+indextts = { path = ".", editable = true }
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+deepspeed = { features = ["deepspeed"], solve-group = "default" }
+webui = { features = ["webui"], solve-group = "default" }
+
+[tool.pixi.tasks]
+
+[tool.pixi.dependencies]
+python = "3.11.*"
+pip = ">=25.2,<26"
